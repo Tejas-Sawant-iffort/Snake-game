@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog Racing Betting Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+        }
+        h1 {
+            color: #00ffcc;
+        }
+        .race-track {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            border: 2px solid #00ffcc;
+            background: #333;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .dog {
+            position: absolute;
+            width: 80px;
+            height: 50px;
+            top: 0;
+            background: url('https://i.imgur.com/IwLqz9F.png') no-repeat center center;
+            background-size: cover;
+        }
+        .bet-section {
+            margin: 20px;
+        }
+        button {
+            background: #00ffcc;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #000;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00cc99;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dog Racing Betting Game</h1>
+
+    <!-- Betting Section -->
+    <div class="bet-section">
+        <label for="bet">Place your bet on Dog (1-5): </label>
+        <input type="number" id="bet" min="1" max="5">
+        <button onclick="startRace()">Start Race</button>
+    </div>
+
+    <!-- Race Track -->
+    <div class="race-track" id="track">
+        <div class="dog" id="dog1" style="top: 10px;"></div>
+        <div class="dog" id="dog2" style="top: 60px;"></div>
+        <div class="dog" id="dog3" style="top: 110px;"></div>
+        <div class="dog" id="dog4" style="top: 160px;"></div>
+        <div class="dog" id="dog5" style="top: 210px;"></div>
+    </div>
+
+    <h2 id="result"></h2>
+
+    <script>
+        function startRace() {
+            let userBet = document.getElementById("bet").value;
+            if (userBet < 1 || userBet > 5) {
+                alert("Please place a valid bet on a dog (1-5).");
+                return;
+            }
+
+            let dogs = [
+                document.getElementById("dog1"),
+                document.getElementById("dog2"),
+                document.getElementById("dog3"),
+                document.getElementById("dog4"),
+                document.getElementById("dog5")
+            ];
+
+            let raceFinished = false;
+            let winner = null;
+            let raceInterval = setInterval(() => {
+                dogs.forEach((dog, index) => {
+                    let move = Math.random() * 10;
+                    let currentPosition = parseFloat(dog.style.left) || 0;
+                    dog.style.left = (currentPosition + move) + "px";
+
+                    if (currentPosition + move >= window.innerWidth - 100 && !raceFinished) {
+                        raceFinished = true;
+                        winner = index + 1;
+                        clearInterval(raceInterval);
+                        setTimeout(() => {
+                            document.getElementById("result").innerText =
+                                "🏆 Dog " + winner + " Wins! " + 
+                                (winner == userBet ? "🎉 You Won!" : "😞 You Lost!");
+                        }, 500);
+                    }
+                });
+            }, 50);
+        }
+    </script>
+</body>
+</html>
