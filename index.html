@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Index Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 800px;
+        }
+        .game {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .game h2 {
+            margin-top: 0;
+        }
+        .game p {
+            margin-bottom: 20px;
+        }
+        .game button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .game button:hover {
+            background-color: #45a049;
+        }
+        .game.active {
+            background-color: #e0f7fa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Snake Game -->
+        <div class="game active">
+            <h2>Snake Game</h2>
+            <p>Classic snake game. Eat the food and grow!</p>
+            <button onclick="window.location.href='snake.html'">Play</button>
+        </div>
+
+        <!-- Dice Game -->
+        <div class="game active">
+            <h2>Dice Game</h2>
+            <p>Roll the dice and test your luck!</p>
+            <button onclick="window.location.href='dice.html'">Play</button>
+        </div>
+
+        <!-- Random Game 1 -->
+        <div class="game">
+            <h2>Random Game 1</h2>
+            <p>Coming soon!</p>
+            <button disabled>Play</button>
+        </div>
+
+        <!-- Random Game 2 -->
+        <div class="game">
+            <h2>Random Game 2</h2>
+            <p>Coming soon!</p>
+            <button disabled>Play</button>
+        </div>
+
+        <!-- Random Game 3 -->
+        <div class="game">
+            <h2>Random Game 3</h2>
+            <p>Coming soon!</p>
+            <button disabled>Play</button>
+        </div>
+
+        <!-- Random Game 4 -->
+        <div class="game">
+            <h2>Random Game 4</h2>
+            <p>Coming soon!</p>
+            <button disabled>Play</button>
+        </div>
+    </div>
+
+</body>
+</html>
