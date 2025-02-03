@@ -234,7 +234,7 @@ function endGame(won, winnings = 0) {
   if (won) {
     result = `🎉 You Cashed Out! 🎉<br>You Won ₹${winnings}. New Balance: ₹${walletBalance}`;
   } else {
-    result = `❌ The Bear Woke Up! ❌<br>You Lost ₹${betAmount}. New Balance: ₹${walletBalance}`;
+    result = `❌ The Bear Woke Up! ❌<br> <img src="https://static.vecteezy.com/system/resources/thumbnails/032/474/099/small/angry-bear-hunts-its-prey-generative-ai-photo.jpg"/> <br>You Lost ₹${betAmount}. New Balance: ₹${walletBalance}`;
   }
 
   document.getElementById('gameScreen').style.display = 'none';
