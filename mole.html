@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whack the Mole!</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    font-family: 'Arial', sans-serif;
+  }
+  h1 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+  }
+  #startScreen, #bankScreen, #betScreen, #gameScreen, #endScreen {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+  }
+  button {
+    margin: 10px;
+    padding: 15px 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    background: linear-gradient(145deg, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  button:hover {
+    transform: scale(1.05);
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4);
+  }
+  input {
+    padding: 12px;
+    font-size: 1rem;
+    margin: 10px 0;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-align: center;
+    outline: none;
+    transition: transform 0.2s ease;
+  }
+  input:focus {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  .holes {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 10px;
+    margin: 20px 0;
+  }
+  .hole {
+    width: 100px;
+    height: 100px;
+    background: #4e4376;
+    border: 2px solid white;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .mole, .bomb {
+    width: 80px;
+    height: 80px;
+    position: absolute;
+    bottom: -100px; /* Start below the hole */
+    transition: bottom 0.3s ease;
+  }
+  .mole {
+    background-image: url('https://i.imgur.com/7QJz9Zv.png'); /* Mole image */
+    background-size: cover;
+  }
+  .bomb {
+    background-image: url('https://i.imgur.com/3gWkGyR.png'); /* Bomb image */
+    background-size: cover;
+  }
+  .score {
+    font-size: 1.5rem;
+    margin-top: 20px;
+  }
+  #resultText {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-top: 20px;
+    animation: fadeIn 1s ease-in-out;
+  }
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="startScreen">
+  <h1>Welcome to Whack the Mole!</h1>
+  <button onclick="showBankScreen()">Start Game</button>
+</div>
+<div id="bankScreen" style="display: none;">
+  <h1>Deposit Money</h1>
+  <p>Your Wallet Balance: ₹<span id="walletBalance">0</span></p>
+  <input type="number" id="depositAmount" placeholder="Enter deposit amount (min ₹50)" min="50" />
+  <button onclick="depositMoney()">Deposit</button>
+</div>
+<div id="betScreen" style="display: none;">
+  <h1>Place Your Bet</h1>
+  <p>Your Wallet Balance: ₹<span id="walletBalanceBet">0</span></p>
+  <input type="number" id="betAmount" placeholder="Enter bet amount (min ₹50)" min="50" />
+  <button onclick="placeBet()">Submit Bet</button>
+</div>
+<div id="gameScreen" style="display: none;">
+  <h1>Whack the Mole!</h1>
+  <div class="score">Score: <span id="score">0</span></div>
+  <div class="holes" id="holes"></div>
+  <div id="timer">Time Left: <span id="timeLeft">30</span>s</div>
+</div>
+<div id="endScreen" style="display: none;">
+  <h1 id="resultText"></h1>
+  <button onclick="restartGame()">Restart Game</button>
+</div>
+<audio id="whackSound" src="https://www.soundjay.com/misc/sounds/hammer-hit-01.mp3"></audio>
+<audio id="bombSound" src="https://www.soundjay.com/misc/sounds/explosion-01.mp3"></audio>
+<script>
+let walletBalance = 0;
+let betAmount = 0;
+let score = 0;
+let timeLeft = 30;
+let gameInterval;
+
+// Replace these URLs with your own images
+const moleImage = "https://i.imgur.com/7QJz9Zv.png"; // Mole image URL
+const bombImage = "https://i.imgur.com/3gWkGyR.png"; // Bomb image URL
+
+function showBankScreen() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('bankScreen').style.display = 'flex';
+  updateWalletBalance();
+}
+
+function depositMoney() {
+  const input = document.getElementById('depositAmount');
+  const amount = parseInt(input.value);
+
+  if (isNaN(amount) || amount < 50) {
+    alert('Please enter a valid deposit amount (minimum ₹50).');
+    return;
+  }
+
+  walletBalance += amount;
+  updateWalletBalance();
+  document.getElementById('bankScreen').style.display = 'none';
+  document.getElementById('betScreen').style.display = 'flex';
+}
+
+function updateWalletBalance() {
+  document.getElementById('walletBalance').textContent = walletBalance;
+  document.getElementById('walletBalanceBet').textContent = walletBalance;
+}
+
+function placeBet() {
+  const input = document.getElementById('betAmount');
+  const amount = parseInt(input.value);
+
+  if (isNaN(amount) || amount < 50) {
+    alert('Please enter a valid bet amount (minimum ₹50).');
+    return;
+  }
+
+  if (amount > walletBalance) {
+    alert('Insufficient balance! Please deposit more money.');
+    document.getElementById('betScreen').style.display = 'none';
+    document.getElementById('bankScreen').style.display = 'flex';
+    return;
+  }
+
+  betAmount = amount;
+  walletBalance -= betAmount; // Deduct bet amount from wallet
+  updateWalletBalance();
+  startGame();
+}
+
+function startGame() {
+  score = 0;
+  timeLeft = 30;
+  document.getElementById('score').textContent = score;
+  document.getElementById('timeLeft').textContent = timeLeft;
+  document.getElementById('betScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'flex';
+
+  const holesContainer = document.getElementById('holes');
+  holesContainer.innerHTML = ''; // Clear previous holes
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.classList.add('hole');
+    holesContainer.appendChild(hole);
+  }
+
+  startTimer();
+  spawnMoles();
+}
+
+function startTimer() {
+  const timerElement = document.getElementById('timeLeft');
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    timerElement.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endGame(true); // Player wins if time runs out
+    }
+  }, 1000);
+}
+
+function spawnMoles() {
+  gameInterval = setInterval(() => {
+    const holes = document.querySelectorAll('.hole');
+    const randomHole = holes[Math.floor(Math.random() * holes.length)];
+    const isBomb = Math.random() < 0.1; // 10% chance for a bomb
+
+    const entity = document.createElement('div');
+    entity.classList.add(isBomb ? 'bomb' : 'mole');
+    randomHole.appendChild(entity);
+
+    setTimeout(() => {
+      if (entity.parentElement) {
+        randomHole.removeChild(entity);
+      }
+    }, 1000); // Entity disappears after 1 second
+  }, 800); // Spawn every 800ms
+}
+
+document.addEventListener('click', (event) => {
+  if (event.target.classList.contains('mole')) {
+    score++;
+    document.getElementById('score').textContent = score;
+    event.target.remove(); // Remove mole when clicked
+    playWhackSound();
+  } else if (event.target.classList.contains('bomb')) {
+    playBombSound();
+    endGame(false); // Player loses if they hit a bomb
+  }
+});
+
+function endGame(won) {
+  clearInterval(gameInterval);
+  let result = '';
+  if (won) {
+    const winnings = betAmount + score * 10; // Simple scoring system
+    walletBalance += winnings;
+    result = `🎉 Time's Up! 🎉<br>You Whacked ${score} Moles!<br>You Won ₹${winnings}. New Balance: ₹${walletBalance}`;
+  } else {
+    result = `💥 BOOM! You Hit a Bomb! 💥<br>You Lost ₹${betAmount}. New Balance: ₹${walletBalance}`;
+  }
+
+  updateWalletBalance();
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'flex';
+  document.getElementById('resultText').innerHTML = result;
+}
+
+function restartGame() {
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('betScreen').style.display = 'flex'; // Go back to bet screen
+}
+
+function playWhackSound() {
+  const whackSound = document.getElementById('whackSound');
+  whackSound.currentTime = 0; // Reset sound
+  whackSound.play();
+}
+
+function playBombSound() {
+  const bombSound = document.getElementById('bombSound');
+  bombSound.currentTime = 0; // Reset sound
+  bombSound.play();
+}
+</script>
+</body>
+</html>
