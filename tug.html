@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tug of War - Two Player Betting Game</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    font-family: 'Arial', sans-serif;
+  }
+  h1 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+  }
+  #startScreen, #bankScreen, #betScreen, #gameScreen, #endScreen {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+  }
+  button {
+    margin: 10px;
+    padding: 15px 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    background: linear-gradient(145deg, #ff7e5f, #feb47b);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  button:hover {
+    transform: scale(1.05);
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4);
+  }
+  input {
+    padding: 12px;
+    font-size: 1rem;
+    margin: 10px 0;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-align: center;
+    outline: none;
+    transition: transform 0.2s ease;
+  }
+  input:focus {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  .track {
+    width: 80%;
+    height: 50px;
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+    border: 2px solid white;
+    border-radius: 25px;
+    position: relative;
+    margin: 20px 0;
+  }
+  .marker {
+    width: 20px;
+    height: 50px;
+    background: white;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+    transition: left 0.5s ease;
+  }
+  .player-info {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+    margin-top: 20px;
+  }
+  .player-info div {
+    text-align: center;
+  }
+  #resultText {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-top: 20px;
+    animation: fadeIn 1s ease-in-out;
+  }
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="startScreen">
+  <h1>Welcome to Tug of War - Two Player Betting Game</h1>
+  <button onclick="showBankScreen()">Start Game</button>
+</div>
+<div id="bankScreen" style="display: none;">
+  <h1>Deposit Money</h1>
+  <p>Player 1 Wallet Balance: ₹<span id="walletBalance1">0</span></p>
+  <input type="number" id="depositAmount1" placeholder="Player 1 Deposit (min ₹50)" min="50" />
+  <p>Player 2 Wallet Balance: ₹<span id="walletBalance2">0</span></p>
+  <input type="number" id="depositAmount2" placeholder="Player 2 Deposit (min ₹50)" min="50" />
+  <button onclick="depositMoney()">Deposit</button>
+</div>
+<div id="betScreen" style="display: none;">
+  <h1>Place Your Bet</h1>
+  <p>Player 1 Wallet Balance: ₹<span id="walletBalanceBet1">0</span></p>
+  <p>Player 2 Wallet Balance: ₹<span id="walletBalanceBet2">0</span></p>
+  <input type="number" id="betAmount" placeholder="Enter bet amount (min ₹50)" min="50" />
+  <button onclick="placeBet()">Submit Bet</button>
+</div>
+<div id="gameScreen" style="display: none;">
+  <h1>Tug of War</h1>
+  <div class="player-info">
+    <div>
+      <h2>Player 1</h2>
+      <button onclick="rollDice(1)">Roll Dice</button>
+    </div>
+    <div>
+      <h2>Player 2</h2>
+      <button onclick="rollDice(2)">Roll Dice</button>
+    </div>
+  </div>
+  <div class="track">
+    <div class="marker" id="marker"></div>
+  </div>
+</div>
+<div id="endScreen" style="display: none;">
+  <h1 id="resultText"></h1>
+  <button onclick="restartGame()">Restart Game</button>
+</div>
+<script>
+let walletBalance1 = 0;
+let walletBalance2 = 0;
+let betAmount = 0;
+
+let markerPosition = 50; // Marker starts at 50% (middle of the track)
+const trackWidth = 80; // Percentage width of the track
+let currentPlayer = 1; // Player 1 starts
+
+function showBankScreen() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('bankScreen').style.display = 'flex';
+  updateWalletBalances();
+}
+
+function depositMoney() {
+  const input1 = document.getElementById('depositAmount1');
+  const input2 = document.getElementById('depositAmount2');
+  const amount1 = parseInt(input1.value);
+  const amount2 = parseInt(input2.value);
+
+  if (isNaN(amount1) || amount1 < 50 || isNaN(amount2) || amount2 < 50) {
+    alert('Please enter valid deposit amounts (minimum ₹50 for both players).');
+    return;
+  }
+
+  walletBalance1 += amount1;
+  walletBalance2 += amount2;
+  updateWalletBalances();
+  document.getElementById('bankScreen').style.display = 'none';
+  document.getElementById('betScreen').style.display = 'flex';
+}
+
+function updateWalletBalances() {
+  document.getElementById('walletBalance1').textContent = walletBalance1;
+  document.getElementById('walletBalance2').textContent = walletBalance2;
+  document.getElementById('walletBalanceBet1').textContent = walletBalance1;
+  document.getElementById('walletBalanceBet2').textContent = walletBalance2;
+}
+
+function placeBet() {
+  const input = document.getElementById('betAmount');
+  const amount = parseInt(input.value);
+
+  if (isNaN(amount) || amount < 50) {
+    alert('Please enter a valid bet amount (minimum ₹50).');
+    return;
+  }
+
+  if (amount > walletBalance1 || amount > walletBalance2) {
+    alert('Insufficient balance for one or both players! Please deposit more money.');
+    document.getElementById('betScreen').style.display = 'none';
+    document.getElementById('bankScreen').style.display = 'flex';
+    return;
+  }
+
+  betAmount = amount;
+  walletBalance1 -= betAmount;
+  walletBalance2 -= betAmount;
+  updateWalletBalances();
+  startGame();
+}
+
+function startGame() {
+  markerPosition = 50; // Reset marker to the middle
+  document.getElementById('marker').style.left = `${markerPosition}%`;
+  currentPlayer = 1; // Player 1 starts
+  document.getElementById('betScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'flex';
+}
+
+function rollDice(player) {
+  if ((player === 1 && currentPlayer !== 1) || (player === 2 && currentPlayer !== 2)) {
+    alert(`It's not your turn!`);
+    return;
+  }
+
+  const roll = Math.floor(Math.random() * 6) + 1; // Random number between 1 and 6
+  if (player === 1) {
+    markerPosition -= roll; // Move marker toward Player 1
+  } else if (player === 2) {
+    markerPosition += roll; // Move marker toward Player 2
+  }
+
+  // Clamp marker position within the track bounds
+  markerPosition = Math.max(0, Math.min(100, markerPosition));
+  document.getElementById('marker').style.left = `${markerPosition}%`;
+
+  // Check for winner
+  if (markerPosition <= 0) {
+    endGame(1); // Player 1 wins
+  } else if (markerPosition >= 100) {
+    endGame(2); // Player 2 wins
+  } else {
+    // Switch turns
+    currentPlayer = currentPlayer === 1 ? 2 : 1;
+  }
+}
+
+function endGame(winner) {
+  let result = '';
+  if (winner === 1) {
+    walletBalance1 += betAmount * 2; // Player 1 wins the bet
+    result = `🎉 Player 1 Wins! 🎉<br>New Balance: ₹${walletBalance1} (Player 1), ₹${walletBalance2} (Player 2)`;
+  } else {
+    walletBalance2 += betAmount * 2; // Player 2 wins the bet
+    result = `🎉 Player 2 Wins! 🎉<br>New Balance: ₹${walletBalance1} (Player 1), ₹${walletBalance2} (Player 2)`;
+  }
+
+  updateWalletBalances();
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'flex';
+  document.getElementById('resultText').innerHTML = result;
+}
+
+function restartGame() {
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('betScreen').style.display = 'flex'; // Go back to bet screen
+}
+</script>
+</body>
+</html>
