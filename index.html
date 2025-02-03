@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Game with Bank Account</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    border: 1px solid #fff;
+    display: block;
+  }
+  #startScreen, #bankScreen, #betScreen, #snakeSelectionScreen, #endScreen {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+  #startScreen button, #bankScreen button, #betScreen button, #snakeSelectionScreen button, #endScreen button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+    border: 1px solid white;
+    border-radius: 5px;
+  }
+  #startScreen button:hover, #bankScreen button:hover, #betScreen button:hover, #snakeSelectionScreen button:hover, #endScreen button:hover {
+    background-color: #555;
+  }
+  input {
+    padding: 10px;
+    font-size: 16px;
+    margin: 10px 0;
+    border: 1px solid white;
+    border-radius: 5px;
+    background-color: #333;
+    color: white;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="startScreen">
+  <h1>Welcome to Snake Betting Game</h1>
+  <button onclick="showBankScreen()">Start Game</button>
+</div>
+<div id="bankScreen" style="display: none;">
+  <h1>Deposit Money</h1>
+  <p>Your Wallet Balance: ₹<span id="walletBalance">0</span></p>
+  <input type="number" id="depositAmount" placeholder="Enter deposit amount (min ₹50)" min="50" />
+  <button onclick="depositMoney()">Deposit</button>
+</div>
+<div id="betScreen" style="display: none;">
+  <h1>Place Your Bet</h1>
+  <p>Your Wallet Balance: ₹<span id="walletBalanceBet">0</span></p>
+  <input type="number" id="betAmount" placeholder="Enter bet amount (min ₹50)" min="50" />
+  <button onclick="placeBet()">Submit Bet</button>
+</div>
+<div id="snakeSelectionScreen" style="display: none;">
+  <h1>Select Your Snake</h1>
+  <button onclick="selectSnake('red')">Red Snake</button>
+  <button onclick="selectSnake('blue')">Blue Snake</button>
+  <button onclick="selectSnake('green')">Green Snake</button>
+  <button onclick="selectSnake('yellow')">Yellow Snake</button>
+</div>
+<div id="endScreen" style="display: none;">
+  <h1 id="resultText"></h1>
+  <button onclick="restartGame()">Restart Game</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let walletBalance = 0; // Player's wallet balance
+let selectedSnakeColor = null;
+let betAmount = 0;
+let gameStarted = false;
+
+const snakeSize = 20;
+const snakes = [
+  { x: canvas.width / 4, y: canvas.height / 2, dx: 2, dy: 0, color: 'red', score: 0, body: [], alive: true },
+  { x: (canvas.width * 3) / 4, y: canvas.height / 2, dx: -2, dy: 0, color: 'blue', score: 0, body: [], alive: true },
+  { x: canvas.width / 2, y: canvas.height / 4, dx: 0, dy: 2, color: 'green', score: 0, body: [], alive: true },
+  { x: canvas.width / 2, y: (canvas.height * 3) / 4, dx: 0, dy: -2, color: 'yellow', score: 0, body: [], alive: true }
+];
+
+let points = [];
+const pointCount = 10;
+
+function showBankScreen() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('bankScreen').style.display = 'flex';
+  updateWalletBalance();
+}
+
+function depositMoney() {
+  const input = document.getElementById('depositAmount');
+  const amount = parseInt(input.value);
+
+  if (isNaN(amount) || amount < 50) {
+    alert('Please enter a valid deposit amount (minimum ₹50).');
+    return;
+  }
+
+  walletBalance += amount;
+  updateWalletBalance();
+  document.getElementById('bankScreen').style.display = 'none';
+  document.getElementById('betScreen').style.display = 'flex';
+}
+
+function updateWalletBalance() {
+  document.getElementById('walletBalance').textContent = walletBalance;
+  document.getElementById('walletBalanceBet').textContent = walletBalance;
+}
+
+function placeBet() {
+  const input = document.getElementById('betAmount');
+  const amount = parseInt(input.value);
+
+  if (isNaN(amount) || amount < 50) {
+    alert('Please enter a valid bet amount (minimum ₹50).');
+    return;
+  }
+
+  if (amount > walletBalance) {
+    alert('Insufficient balance! Please deposit more money.');
+    document.getElementById('betScreen').style.display = 'none';
+    document.getElementById('bankScreen').style.display = 'flex';
+    return;
+  }
+
+  betAmount = amount;
+  walletBalance -= betAmount; // Deduct bet amount from wallet
+  updateWalletBalance();
+  document.getElementById('betScreen').style.display = 'none';
+  document.getElementById('snakeSelectionScreen').style.display = 'flex'; // Show snake selection screen
+}
+
+function selectSnake(color) {
+  selectedSnakeColor = color;
+  document.getElementById('snakeSelectionScreen').style.display = 'none';
+  gameStarted = true; // Mark the game as started
+  createPoints();
+  gameLoop();
+}
+
+function createPoints() {
+  for (let i = 0; i < pointCount; i++) {
+    points.push({
+      x: Math.random() * (canvas.width - snakeSize / 2),
+      y: Math.random() * (canvas.height - snakeSize / 2),
+      size: snakeSize / 4,
+      color: 'white'
+    });
+  }
+}
+
+function drawPoint(point) {
+  ctx.beginPath();
+  ctx.arc(point.x + point.size / 2, point.y + point.size / 2, point.size / 2, 0, Math.PI * 2);
+  ctx.fillStyle = point.color;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawSnake(snake) {
+  if (!snake.alive) return;
+
+  // Draw head
+  ctx.fillStyle = snake.color;
+  ctx.fillRect(snake.x, snake.y, snakeSize, snakeSize);
+
+  // Draw the snake's body
+  snake.body.forEach(segment => {
+    ctx.fillRect(segment.x, segment.y, snakeSize, snakeSize);
+  });
+}
+
+function updateSnake(snake) {
+  if (!snake.alive) return;
+
+  // Simple AI: Move towards the nearest point
+  let nearestPoint = null;
+  let minDistance = Infinity;
+
+  for (const point of points) {
+    const distance = Math.sqrt((snake.x - point.x) ** 2 + (snake.y - point.y) ** 2);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestPoint = point;
+    }
+  }
+
+  if (nearestPoint) {
+    if (Math.abs(snake.x - nearestPoint.x) > Math.abs(snake.y - nearestPoint.y)) {
+      snake.dx = snake.x < nearestPoint.x ? 2 : -2;
+      snake.dy = 0;
+    } else {
+      snake.dy = snake.y < nearestPoint.y ? 2 : -2;
+      snake.dx = 0;
+    }
+  }
+
+  // Add current position to the body
+  snake.body.unshift({ x: snake.x, y: snake.y });
+
+  // Trim the body to match the score (length)
+  if (snake.body.length > snake.score) {
+    snake.body.pop();
+  }
+
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  // Wrap around screen edges
+  if (snake.x < 0) snake.x = canvas.width - snakeSize;
+  if (snake.x >= canvas.width) snake.x = 0;
+  if (snake.y < 0) snake.y = canvas.height - snakeSize;
+  if (snake.y >= canvas.height) snake.y = 0;
+
+  // Check for collision with points
+  for (let i = points.length - 1; i >= 0; i--) {
+    const point = points[i];
+    if (
+      snake.x < point.x + point.size &&
+      snake.x + snakeSize > point.x &&
+      snake.y < point.y + point.size &&
+      snake.y + snakeSize > point.y
+    ) {
+      snake.score++;
+      points.splice(i, 1); // Remove the eaten point
+      points.push({
+        x: Math.random() * (canvas.width - snakeSize / 2),
+        y: Math.random() * (canvas.height - snakeSize / 2),
+        size: snakeSize / 4,
+        color: 'white'
+      }); // Add a new point
+    }
+  }
+
+  // Check for collision with other snakes (only after the game starts)
+  if (gameStarted) {
+    snakes.forEach(otherSnake => {
+      if (snake === otherSnake || !otherSnake.alive) return;
+
+      // Check head-to-head collision
+      if (
+        snake.x < otherSnake.x + snakeSize &&
+        snake.x + snakeSize > otherSnake.x &&
+        snake.y < otherSnake.y + snakeSize &&
+        snake.y + snakeSize > otherSnake.y
+      ) {
+        snake.alive = false;
+      }
+
+      // Check head-to-body collision
+      otherSnake.body.forEach(segment => {
+        if (
+          snake.x < segment.x + snakeSize &&
+          snake.x + snakeSize > segment.x &&
+          snake.y < segment.y + snakeSize &&
+          snake.y + snakeSize > segment.y
+        ) {
+          snake.alive = false;
+        }
+      });
+    });
+  }
+}
+
+function drawScores() {
+  ctx.fillStyle = 'white';
+  ctx.font = '20px Arial';
+  snakes.forEach((snake, index) => {
+    ctx.fillText(`Snake ${index + 1}: ${snake.alive ? snake.score : 'Eliminated'}`, 10, 20 * (index + 1));
+  });
+}
+
+function checkWinner() {
+  const aliveSnakes = snakes.filter(snake => snake.alive);
+  if (aliveSnakes.length === 1) {
+    const winner = aliveSnakes[0];
+    document.getElementById('endScreen').style.display = 'flex';
+    const resultText = document.getElementById('resultText');
+
+    if (selectedSnakeColor === winner.color) {
+      walletBalance += betAmount * 2; // Double the money for correct guess
+      resultText.textContent = `You Win! (${winner.color} Snake) - ₹${walletBalance}`;
+      resultText.style.color = 'lime';
+    } else {
+      resultText.textContent = `You Lose! (${winner.color} Snake Wins) - ₹${walletBalance}`;
+      resultText.style.color = 'red';
+    }
+
+    cancelAnimationFrame(gameLoopId);
+  }
+}
+
+function restartGame() {
+  document.getElementById('endScreen').style.display = 'none';
+  resetGame();
+  document.getElementById('betScreen').style.display = 'flex'; // Go back to bet screen
+}
+
+function resetGame() {
+  snakes.forEach(snake => {
+    snake.x = Math.random() * canvas.width;
+    snake.y = Math.random() * canvas.height;
+    snake.dx = Math.random() > 0.5 ? 2 : -2;
+    snake.dy = Math.random() > 0.5 ? 2 : -2;
+    snake.score = 0;
+    snake.body = [];
+    snake.alive = true;
+  });
+  points = [];
+  selectedSnakeColor = null;
+  betAmount = 0;
+  gameStarted = false; // Reset game state
+}
+
+let gameLoopId;
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  points.forEach(drawPoint);
+  snakes.forEach(snake => {
+    updateSnake(snake);
+    drawSnake(snake);
+  });
+
+  drawScores();
+  checkWinner();
+
+  gameLoopId = requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>
