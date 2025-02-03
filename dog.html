@@ -3,110 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dog Racing Betting Game</title>
+    <title>Dog Racing Bet Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #222;
-            color: #fff;
+            background-color: #1e1e1e;
+            color: white;
             text-align: center;
+            padding: 20px;
         }
-        h1 {
-            color: #00ffcc;
-        }
-        .race-track {
+        .track {
             position: relative;
             width: 100%;
-            height: 250px;
-            border: 2px solid #00ffcc;
-            background: #333;
-            margin: 20px auto;
+            height: 350px;
+            border: 4px solid white;
+            background: #444;
             overflow: hidden;
         }
         .dog {
             position: absolute;
-            width: 80px;
-            height: 50px;
+            width: 100px;
+            height: 60px;
             top: 0;
-            
-            background-size: cover;
         }
-        .bet-section {
-            margin: 20px;
+        .dog img {
+            width: 100%;
+            height: 100%;
+        }
+        .finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            height: 100%;
+            width: 5px;
+            background-color: red;
+        }
+        .bet-container {
+            margin-bottom: 20px;
         }
         button {
-            background: #00ffcc;
-            border: none;
             padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
             cursor: pointer;
-            font-size: 16px;
-            color: #000;
-            font-weight: bold;
+            margin-top: 10px;
         }
         button:hover {
-            background: #00cc99;
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <h1>Dog Racing Betting Game</h1>
 
-    <!-- Betting Section -->
-    <div class="bet-section">
-        <label for="bet">Place your bet on Dog (1-5): </label>
-        <input type="number" id="bet" min="1" max="5">
+    <h1>🐕 Dog Racing Bet Game 🏁</h1>
+
+    <div class="bet-container">
+        <label for="bet">Select a dog to bet on: </label>
+        <select id="bet">
+            <option value="dog1">Dog 1</option>
+            <option value="dog2">Dog 2</option>
+            <option value="dog3">Dog 3</option>
+            <option value="dog4">Dog 4</option>
+            <option value="dog5">Dog 5</option>
+        </select>
         <button onclick="startRace()">Start Race</button>
     </div>
 
-    <!-- Race Track -->
-    <div class="race-track" id="track">
-        <div class="dog" id="dog1" style="top: 10px;">🐕</div>
-<div class="dog" id="dog2" style="top: 60px;">🐩</div>
-<div class="dog" id="dog3" style="top: 110px;">🐶</div>
-<div class="dog" id="dog4" style="top: 160px;">🦮</div>
-<div class="dog" id="dog5" style="top: 210px;">🐕‍🦺</div>
-
+    <div class="track">
+        <div class="dog" id="dog1" style="top: 10px; left: 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443.jpg" alt="Dog 1">
+        </div>
+        <div class="dog" id="dog2" style="top: 80px; left: 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Cute_dog.jpg" alt="Dog 2">
+        </div>
+        <div class="dog" id="dog3" style="top: 150px; left: 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Great_Dane_Blue.jpg" alt="Dog 3">
+        </div>
+        <div class="dog" id="dog4" style="top: 220px; left: 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/bf/Dog_puppy.jpg" alt="Dog 4">
+        </div>
+        <div class="dog" id="dog5" style="top: 290px; left: 0;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d9/Collage_of_Nine_Dogs.jpg" alt="Dog 5">
+        </div>
+        <div class="finish-line"></div>
     </div>
 
     <h2 id="result"></h2>
 
     <script>
         function startRace() {
-            let userBet = document.getElementById("bet").value;
-            if (userBet < 1 || userBet > 5) {
-                alert("Please place a valid bet on a dog (1-5).");
-                return;
+            let dogs = document.querySelectorAll('.dog');
+            let raceOver = false;
+            let bet = document.getElementById('bet').value;
+            let winner = null;
+
+            function moveDog(dog) {
+                let position = 0;
+                let interval = setInterval(() => {
+                    if (raceOver) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    position += Math.random() * 10; // Random speed
+                    dog.style.left = position + 'px';
+                    
+                    if (position >= window.innerWidth - 150) {
+                        clearInterval(interval);
+                        raceOver = true;
+                        winner = dog.id;
+                        declareWinner(winner, bet);
+                    }
+                }, 50);
             }
 
-            let dogs = [
-                document.getElementById("dog1"),
-                document.getElementById("dog2"),
-                document.getElementById("dog3"),
-                document.getElementById("dog4"),
-                document.getElementById("dog5")
-            ];
+            dogs.forEach(dog => moveDog(dog));
+        }
 
-            let raceFinished = false;
-            let winner = null;
-            let raceInterval = setInterval(() => {
-                dogs.forEach((dog, index) => {
-                    let move = Math.random() * 10;
-                    let currentPosition = parseFloat(dog.style.left) || 0;
-                    dog.style.left = (currentPosition + move) + "px";
-
-                    if (currentPosition + move >= window.innerWidth - 100 && !raceFinished) {
-                        raceFinished = true;
-                        winner = index + 1;
-                        clearInterval(raceInterval);
-                        setTimeout(() => {
-                            document.getElementById("result").innerText =
-                                "🏆 Dog " + winner + " Wins! " + 
-                                (winner == userBet ? "🎉 You Won!" : "😞 You Lost!");
-                        }, 500);
-                    }
-                });
-            }, 50);
+        function declareWinner(winner, bet) {
+            let resultText = `🏆 The winner is ${winner.toUpperCase()}!`;
+            if (winner === bet) {
+                resultText += " 🎉 You won the bet!";
+            } else {
+                resultText += " 😞 You lost the bet!";
+            }
+            document.getElementById('result').innerText = resultText;
         }
     </script>
+
 </body>
 </html>
